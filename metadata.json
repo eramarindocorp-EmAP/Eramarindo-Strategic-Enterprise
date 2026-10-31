@@ -1,0 +1,6 @@
+{
+  "name": "PT. Eramarindo Anugerah Pratama - Portal Korporat & Fund Management",
+  "description": "Portal Korporat & Sistem Terintegrasi Pengelolaan Ekuitas, Aset Strategis Indonesia, CMS, dan Dasbor Investasi PT. Eramarindo Anugerah Pratama.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
