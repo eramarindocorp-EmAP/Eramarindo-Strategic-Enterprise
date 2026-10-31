@@ -82,16 +82,39 @@ interface AppContextType {
   syncNow: () => void;
 }
 
+// Safe storage helper with fallback if localStorage is disabled or restricted in iframe
+const safeStorage = {
+  getItem: (key: string): string | null => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        return window.localStorage.getItem(key);
+      }
+    } catch {
+      // Ignored
+    }
+    return null;
+  },
+  setItem: (key: string, value: string): void => {
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(key, value);
+      }
+    } catch {
+      // Ignored
+    }
+  },
+};
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Preferences
   const [language, setLanguage] = useState<Language>(() => {
-    return (localStorage.getItem('emap_lang') as Language) || 'id';
+    return (safeStorage.getItem('emap_lang') as Language) || 'id';
   });
 
   const [theme, setTheme] = useState<Theme>(() => {
-    return (localStorage.getItem('emap_theme') as Theme) || 'light';
+    return (safeStorage.getItem('emap_theme') as Theme) || 'light';
   });
 
   const [fontSize, setFontSize] = useState<FontSize>('normal');
@@ -106,17 +129,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Data state with localStorage persistence
   const [sectors, setSectors] = useState<SectorItem[]>(() => {
-    const saved = localStorage.getItem('emap_sectors');
+    const saved = safeStorage.getItem('emap_sectors');
     return saved ? JSON.parse(saved) : INITIAL_SECTORS;
   });
 
   const [articles, setArticles] = useState<CMSArticle[]>(() => {
-    const saved = localStorage.getItem('emap_articles');
+    const saved = safeStorage.getItem('emap_articles');
     return saved ? JSON.parse(saved) : INITIAL_ARTICLES;
   });
 
   const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem('emap_transactions');
+    const saved = safeStorage.getItem('emap_transactions');
     return saved ? JSON.parse(saved) : INITIAL_TRANSACTIONS;
   });
 
@@ -124,7 +147,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Security status
   const [securityStatus, setSecurityStatus] = useState<SecurityStatus>(() => {
-    const saved = localStorage.getItem('emap_security');
+    const saved = safeStorage.getItem('emap_security');
     return saved
       ? JSON.parse(saved)
       : {
@@ -168,7 +191,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ]);
 
   // Network & Sync
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
@@ -192,32 +215,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Sync to localStorage
   useEffect(() => {
-    localStorage.setItem('emap_lang', language);
+    safeStorage.setItem('emap_lang', language);
   }, [language]);
 
   useEffect(() => {
-    localStorage.setItem('emap_theme', theme);
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
+    safeStorage.setItem('emap_theme', theme);
+    if (typeof document !== 'undefined') {
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
     }
   }, [theme]);
 
   useEffect(() => {
-    localStorage.setItem('emap_sectors', JSON.stringify(sectors));
+    safeStorage.setItem('emap_sectors', JSON.stringify(sectors));
   }, [sectors]);
 
   useEffect(() => {
-    localStorage.setItem('emap_articles', JSON.stringify(articles));
+    safeStorage.setItem('emap_articles', JSON.stringify(articles));
   }, [articles]);
 
   useEffect(() => {
-    localStorage.setItem('emap_transactions', JSON.stringify(transactions));
+    safeStorage.setItem('emap_transactions', JSON.stringify(transactions));
   }, [transactions]);
 
   useEffect(() => {
-    localStorage.setItem('emap_security', JSON.stringify(securityStatus));
+    safeStorage.setItem('emap_security', JSON.stringify(securityStatus));
   }, [securityStatus]);
 
   const toggleTheme = () => {
